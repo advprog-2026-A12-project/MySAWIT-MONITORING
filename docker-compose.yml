@@ -1,0 +1,67 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: central-prometheus
+    restart: unless-stopped
+    cpus: "0.5"
+    mem_limit: 512m
+    mem_reservation: 384m
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: central-loki
+    restart: unless-stopped
+    cpus: "0.5"
+    mem_limit: 512m
+    mem_reservation: 384m
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/config.yml
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: central-promtail
+    restart: unless-stopped
+    cpus: "0.5"
+    mem_limit: 512m
+    mem_reservation: 384m
+    depends_on:
+      - loki
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: central-grafana
+    restart: unless-stopped
+    cpus: "0.5"
+    mem_limit: 512m
+    mem_reservation: 384m
+    depends_on:
+      - prometheus
+      - loki
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+volumes:
+  grafana-data:
+  loki-data:
