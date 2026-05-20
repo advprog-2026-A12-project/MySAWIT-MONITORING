@@ -27,19 +27,8 @@ scrape_configs:
         regex: '/(.*)'
 
       - source_labels: [__meta_docker_container_name]
-        regex: '/auth-app'
         target_label: service
-        replacement: auth-app
-
-      - source_labels: [__meta_docker_container_name]
-        regex: '/payment-app'
-        target_label: service
-        replacement: payment-app
-
-      - source_labels: [__meta_docker_container_name]
-        regex: '/sawit-app'
-        target_label: service
-        replacement: sawit-app
+        regex: '/(.*)'
 
       - source_labels: [__meta_docker_container_label_com_docker_compose_project]
         target_label: project
